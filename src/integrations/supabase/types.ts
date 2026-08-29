@@ -14,160 +14,16 @@ export type Database = {
   }
   public: {
     Tables: {
-      classes: {
-        Row: {
-          capacity: number | null
-          code: string | null
-          created_at: string
-          id: string
-          level_id: string | null
-          name: string
-          updated_at: string
-        }
-        Insert: {
-          capacity?: number | null
-          code?: string | null
-          created_at?: string
-          id?: string
-          level_id?: string | null
-          name: string
-          updated_at?: string
-        }
-        Update: {
-          capacity?: number | null
-          code?: string | null
-          created_at?: string
-          id?: string
-          level_id?: string | null
-          name?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "classes_level_id_fkey"
-            columns: ["level_id"]
-            isOneToOne: false
-            referencedRelation: "levels"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      levels: {
-        Row: {
-          code: string | null
-          created_at: string
-          id: string
-          name: string
-          position: number
-          updated_at: string
-        }
-        Insert: {
-          code?: string | null
-          created_at?: string
-          id?: string
-          name: string
-          position?: number
-          updated_at?: string
-        }
-        Update: {
-          code?: string | null
-          created_at?: string
-          id?: string
-          name?: string
-          position?: number
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      profiles: {
-        Row: {
-          class_id: string | null
-          created_at: string
-          email: string
-          full_name: string | null
-          id: string
-          level_id: string | null
-          reviewed_at: string | null
-          space: Database["public"]["Enums"]["app_space"]
-          status: Database["public"]["Enums"]["account_status"]
-          updated_at: string
-        }
-        Insert: {
-          class_id?: string | null
-          created_at?: string
-          email: string
-          full_name?: string | null
-          id: string
-          level_id?: string | null
-          reviewed_at?: string | null
-          space: Database["public"]["Enums"]["app_space"]
-          status?: Database["public"]["Enums"]["account_status"]
-          updated_at?: string
-        }
-        Update: {
-          class_id?: string | null
-          created_at?: string
-          email?: string
-          full_name?: string | null
-          id?: string
-          level_id?: string | null
-          reviewed_at?: string | null
-          space?: Database["public"]["Enums"]["app_space"]
-          status?: Database["public"]["Enums"]["account_status"]
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "profiles_class_id_fkey"
-            columns: ["class_id"]
-            isOneToOne: false
-            referencedRelation: "classes"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "profiles_level_id_fkey"
-            columns: ["level_id"]
-            isOneToOne: false
-            referencedRelation: "levels"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      user_roles: {
-        Row: {
-          id: string
-          role: Database["public"]["Enums"]["app_role"]
-          user_id: string
-        }
-        Insert: {
-          id?: string
-          role: Database["public"]["Enums"]["app_role"]
-          user_id: string
-        }
-        Update: {
-          id?: string
-          role?: Database["public"]["Enums"]["app_role"]
-          user_id?: string
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      has_role: {
-        Args: {
-          _role: Database["public"]["Enums"]["app_role"]
-          _user_id: string
-        }
-        Returns: boolean
-      }
+      [_ in never]: never
     }
     Enums: {
-      account_status: "pending" | "approved" | "rejected"
-      app_role: "super_admin"
-      app_space: "talameed" | "taleem" | "admin"
+      [_ in never]: never
     }
     CompositeTypes: {
       [_ in never]: never
@@ -294,10 +150,6 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {
-      account_status: ["pending", "approved", "rejected"],
-      app_role: ["super_admin"],
-      app_space: ["talameed", "taleem", "admin"],
-    },
+    Enums: {},
   },
 } as const
