@@ -310,6 +310,36 @@ function UserEditor({
           </option>
         ))}
       </select>
+      {space === "taleem" ? (
+        <div className="sm:col-span-3 rounded-xl border border-border p-3">
+          <div className="text-sm font-semibold text-foreground">الأقسام المُسندة إلى الأستاذ</div>
+          <p className="mt-1 text-xs text-muted-foreground">يمكن إسناد أكثر من قسم للأستاذ الواحد.</p>
+          {classes.length === 0 ? (
+            <p className="mt-3 text-xs text-muted-foreground">لا توجد أقسام بعد.</p>
+          ) : (
+            <div className="mt-3 grid gap-2 sm:grid-cols-3">
+              {classes.map((c) => (
+                <label key={c.id} className="flex items-center gap-2 text-sm text-foreground">
+                  <input
+                    type="checkbox"
+                    checked={teachClasses.includes(c.id)}
+                    onChange={() => toggleTeachClass(c.id)}
+                  />
+                  <span>
+                    {c.name}
+                    {c.level_id ? (
+                      <span className="text-xs text-muted-foreground">
+                        {" "}
+                        — {levels.find((l) => l.id === c.level_id)?.name ?? ""}
+                      </span>
+                    ) : null}
+                  </span>
+                </label>
+              ))}
+            </div>
+          )}
+        </div>
+      ) : null}
       <div className="flex gap-2">
         <button type="submit" className="btn-primary" disabled={busy}>
           حفظ
