@@ -14,6 +14,7 @@ export function UsersPanel({ client }: { client: SupabaseClient<Database> }) {
   const [rows, setRows] = useState<ProfileRow[]>([]);
   const [levels, setLevels] = useState<LevelRow[]>([]);
   const [classes, setClasses] = useState<ClassRow[]>([]);
+  const [teacherClasses, setTeacherClasses] = useState<Record<string, string[]>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
@@ -23,17 +24,24 @@ export function UsersPanel({ client }: { client: SupabaseClient<Database> }) {
 
   const load = async () => {
     setLoading(true);
-    const [{ data: p, error: e1 }, { data: lv, error: e2 }, { data: cl, error: e3 }] = await Promise.all([
-      client.from("profiles").select("*").order("created_at", { ascending: false }),
-      client.from("levels").select("*").order("position", { ascending: true }),
-      client.from("classes").select("*").order("name", { ascending: true }),
-    ]);
-    if (e1 || e2 || e3) setError("تعذّر تحميل المستخدمين. تأكد من صلاحيات المشرف العام.");
+    const [{ data: p, error: e1 }, { data: lv, error: e2 }, { data: cl, error: e3 }, { data: tc, error: e4 }] =
+      await Promise.all([
+        client.from("profiles").select("*").order("created_at", { ascending: false }),
+        client.from("levels").select("*").order("position", { ascending: true }),
+        client.from("classes").select("*").order("name", { ascending: true }),
+        client.from("teacher_classes").select("teacher_id, class_id"),
+      ]);
+    if (e1 || e2 || e3 || e4) setError("تعذّر تحميل المستخدمين. تأكد من صلاحيات المشرف العام.");
     else {
       setError(null);
       setRows(p ?? []);
       setLevels(lv ?? []);
       setClasses(cl ?? []);
+      const map: Record<string, string[]> = {};
+      for (const row of tc ?? []) {
+        (map[row.teacher_id] ??= []).push(row.class_id);
+      }
+      setTeacherClasses(map);
     }
     setLoading(false);
   };
@@ -43,14 +51,37 @@ export function UsersPanel({ client }: { client: SupabaseClient<Database> }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [client]);
 
-  const save = async (patch: Partial<ProfileRow>) => {
+  const save = async (patch: Partial<ProfileRow>, teacherClassIds: string[]) => {
     if (!editing) return;
     setBusy(true);
     const { error: err } = await client
       .from("profiles")
       .update({ ...patch, reviewed_at: new Date().toISOString() })
       .eq("id", editing.id);
-    if (err) setError("تعذّر حفظ المستخدم.");
+
+    let syncError = err;
+    if (!syncError) {
+      const current = teacherClasses[editing.id] ?? [];
+      const next = patch.space === "taleem" ? teacherClassIds : [];
+      const toAdd = next.filter((id) => !current.includes(id));
+      const toRemove = current.filter((id) => !next.includes(id));
+      if (toRemove.length > 0) {
+        const { error: delErr } = await client
+          .from("teacher_classes")
+          .delete()
+          .eq("teacher_id", editing.id)
+          .in("class_id", toRemove);
+        syncError = delErr;
+      }
+      if (!syncError && toAdd.length > 0) {
+        const { error: insErr } = await client
+          .from("teacher_classes")
+          .insert(toAdd.map((class_id) => ({ teacher_id: editing.id, class_id })));
+        syncError = insErr;
+      }
+    }
+
+    if (syncError) setError("تعذّر حفظ المستخدم.");
     else {
       setError(null);
       setEditing(null);
@@ -68,6 +99,11 @@ export function UsersPanel({ client }: { client: SupabaseClient<Database> }) {
 
   const levelName = (id: string | null) => levels.find((l) => l.id === id)?.name ?? "—";
   const className = (id: string | null) => classes.find((c) => c.id === id)?.name ?? "—";
+  const teacherClassNames = (id: string) =>
+    (teacherClasses[id] ?? [])
+      .map((cid) => classes.find((c) => c.id === cid)?.name)
+      .filter(Boolean)
+      .join("، ");
 
   const visible = rows.filter((r) => {
     if (spaceFilter !== "all" && r.space !== spaceFilter) return false;
