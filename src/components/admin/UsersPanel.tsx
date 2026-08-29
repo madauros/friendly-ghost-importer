@@ -214,6 +214,7 @@ function UserEditor({
   row,
   levels,
   classes,
+  teacherClassIds,
   busy,
   onCancel,
   onSave,
@@ -221,30 +222,38 @@ function UserEditor({
   row: ProfileRow;
   levels: LevelRow[];
   classes: ClassRow[];
+  teacherClassIds: string[];
   busy: boolean;
   onCancel: () => void;
-  onSave: (patch: Partial<ProfileRow>) => Promise<void>;
+  onSave: (patch: Partial<ProfileRow>, teacherClassIds: string[]) => Promise<void>;
 }) {
   const [fullName, setFullName] = useState(row.full_name ?? "");
   const [space, setSpace] = useState(row.space);
   const [status, setStatus] = useState(row.status);
   const [levelId, setLevelId] = useState(row.level_id ?? "");
   const [classId, setClassId] = useState(row.class_id ?? "");
+  const [teachClasses, setTeachClasses] = useState<string[]>(teacherClassIds);
 
   const filteredClasses = levelId === "" ? classes : classes.filter((c) => c.level_id === levelId);
+
+  const toggleTeachClass = (id: string) =>
+    setTeachClasses((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
 
   return (
     <form
       className="grid gap-3 sm:grid-cols-3"
       onSubmit={(e) => {
         e.preventDefault();
-        void onSave({
-          full_name: fullName.trim() === "" ? null : fullName.trim(),
-          space,
-          status,
-          level_id: levelId === "" ? null : levelId,
-          class_id: classId === "" ? null : classId,
-        });
+        void onSave(
+          {
+            full_name: fullName.trim() === "" ? null : fullName.trim(),
+            space,
+            status,
+            level_id: levelId === "" ? null : levelId,
+            class_id: classId === "" ? null : classId,
+          },
+          teachClasses,
+        );
       }}
     >
       <div className="text-xs text-muted-foreground sm:col-span-3" dir="ltr">
