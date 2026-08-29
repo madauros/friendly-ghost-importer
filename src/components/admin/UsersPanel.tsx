@@ -158,6 +158,7 @@ export function UsersPanel({ client }: { client: SupabaseClient<Database> }) {
                     row={r}
                     levels={levels}
                     classes={classes}
+                    teacherClassIds={teacherClasses[r.id] ?? []}
                     busy={busy}
                     onCancel={() => setEditing(null)}
                     onSave={save}
@@ -180,6 +181,12 @@ export function UsersPanel({ client }: { client: SupabaseClient<Database> }) {
                             <span>المستوى: {levelName(r.level_id)}</span>
                             <span>•</span>
                             <span>القسم: {className(r.class_id)}</span>
+                          </>
+                        ) : null}
+                        {r.space === "taleem" ? (
+                          <>
+                            <span>•</span>
+                            <span>الأقسام: {teacherClassNames(r.id) || "—"}</span>
                           </>
                         ) : null}
                       </div>
