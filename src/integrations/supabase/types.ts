@@ -82,43 +82,44 @@ export type Database = {
       notifications: {
         Row: {
           actor_id: string | null
-          body: string | null
           created_at: string
           id: string
           kind: string
+          payload: Json
           read_at: string | null
-          submission_id: string | null
-          title: string
           user_id: string
         }
         Insert: {
           actor_id?: string | null
-          body?: string | null
           created_at?: string
           id?: string
           kind: string
+          payload?: Json
           read_at?: string | null
-          submission_id?: string | null
-          title: string
           user_id: string
         }
         Update: {
           actor_id?: string | null
-          body?: string | null
           created_at?: string
           id?: string
           kind?: string
+          payload?: Json
           read_at?: string | null
-          submission_id?: string | null
-          title?: string
           user_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "notifications_submission_id_fkey"
-            columns: ["submission_id"]
+            foreignKeyName: "notifications_actor_id_fkey"
+            columns: ["actor_id"]
             isOneToOne: false
-            referencedRelation: "submissions"
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -182,12 +183,9 @@ export type Database = {
           category: Database["public"]["Enums"]["resource_category"]
           created_at: string
           description: string | null
-          file_name: string
-          file_path: string
-          file_size: number | null
+          file_path: string | null
           id: string
           level_id: string | null
-          mime_type: string | null
           teacher_id: string
           title: string
           updated_at: string
@@ -196,12 +194,9 @@ export type Database = {
           category: Database["public"]["Enums"]["resource_category"]
           created_at?: string
           description?: string | null
-          file_name: string
-          file_path: string
-          file_size?: number | null
+          file_path?: string | null
           id?: string
           level_id?: string | null
-          mime_type?: string | null
           teacher_id: string
           title: string
           updated_at?: string
@@ -210,12 +205,9 @@ export type Database = {
           category?: Database["public"]["Enums"]["resource_category"]
           created_at?: string
           description?: string | null
-          file_name?: string
-          file_path?: string
-          file_size?: number | null
+          file_path?: string | null
           id?: string
           level_id?: string | null
-          mime_type?: string | null
           teacher_id?: string
           title?: string
           updated_at?: string
@@ -228,6 +220,13 @@ export type Database = {
             referencedRelation: "levels"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "resources_teacher_id_fkey"
+            columns: ["teacher_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       submission_comments: {
@@ -237,7 +236,6 @@ export type Database = {
           created_at: string
           id: string
           submission_id: string
-          updated_at: string
         }
         Insert: {
           author_id: string
@@ -245,7 +243,6 @@ export type Database = {
           created_at?: string
           id?: string
           submission_id: string
-          updated_at?: string
         }
         Update: {
           author_id?: string
@@ -253,9 +250,15 @@ export type Database = {
           created_at?: string
           id?: string
           submission_id?: string
-          updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "submission_comments_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "submission_comments_submission_id_fkey"
             columns: ["submission_id"]
@@ -267,67 +270,45 @@ export type Database = {
       }
       submissions: {
         Row: {
-          class_id: string | null
+          answer_text: string | null
           created_at: string
-          file_name: string
-          file_path: string
-          file_size: number | null
+          file_path: string | null
           id: string
-          level_id: string | null
-          mime_type: string | null
           resource_id: string
           student_id: string
-          teacher_id: string
           updated_at: string
         }
         Insert: {
-          class_id?: string | null
+          answer_text?: string | null
           created_at?: string
-          file_name: string
-          file_path: string
-          file_size?: number | null
+          file_path?: string | null
           id?: string
-          level_id?: string | null
-          mime_type?: string | null
           resource_id: string
           student_id: string
-          teacher_id: string
           updated_at?: string
         }
         Update: {
-          class_id?: string | null
+          answer_text?: string | null
           created_at?: string
-          file_name?: string
-          file_path?: string
-          file_size?: number | null
+          file_path?: string | null
           id?: string
-          level_id?: string | null
-          mime_type?: string | null
           resource_id?: string
           student_id?: string
-          teacher_id?: string
           updated_at?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "submissions_class_id_fkey"
-            columns: ["class_id"]
-            isOneToOne: false
-            referencedRelation: "classes"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "submissions_level_id_fkey"
-            columns: ["level_id"]
-            isOneToOne: false
-            referencedRelation: "levels"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "submissions_resource_id_fkey"
             columns: ["resource_id"]
             isOneToOne: false
             referencedRelation: "resources"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "submissions_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -357,6 +338,13 @@ export type Database = {
             columns: ["class_id"]
             isOneToOne: false
             referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "teacher_classes_teacher_id_fkey"
+            columns: ["teacher_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
