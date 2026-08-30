@@ -14,6 +14,7 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as TalameedRouteImport } from './routes/talameed'
 import { Route as TaleemRouteImport } from './routes/taleem'
+import { Route as ApiPublicNotifySubmissionRouteImport } from './routes/api/public/notify-submission'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -40,6 +41,12 @@ const TaleemRoute = TaleemRouteImport.update({
   path: '/taleem',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicNotifySubmissionRoute =
+  ApiPublicNotifySubmissionRouteImport.update({
+    id: '/api/public/notify-submission',
+    path: '/api/public/notify-submission',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -47,6 +54,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/talameed': typeof TalameedRoute
   '/taleem': typeof TaleemRoute
+  '/api/public/notify-submission': typeof ApiPublicNotifySubmissionRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -54,6 +62,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/talameed': typeof TalameedRoute
   '/taleem': typeof TaleemRoute
+  '/api/public/notify-submission': typeof ApiPublicNotifySubmissionRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -62,13 +71,33 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/talameed': typeof TalameedRoute
   '/taleem': typeof TaleemRoute
+  '/api/public/notify-submission': typeof ApiPublicNotifySubmissionRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/admin' | '/reset-password' | '/talameed' | '/taleem'
+  fullPaths:
+    | '/'
+    | '/admin'
+    | '/reset-password'
+    | '/talameed'
+    | '/taleem'
+    | '/api/public/notify-submission'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/admin' | '/reset-password' | '/talameed' | '/taleem'
-  id: '__root__' | '/' | '/admin' | '/reset-password' | '/talameed' | '/taleem'
+  to:
+    | '/'
+    | '/admin'
+    | '/reset-password'
+    | '/talameed'
+    | '/taleem'
+    | '/api/public/notify-submission'
+  id:
+    | '__root__'
+    | '/'
+    | '/admin'
+    | '/reset-password'
+    | '/talameed'
+    | '/taleem'
+    | '/api/public/notify-submission'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -77,6 +106,7 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   TalameedRoute: typeof TalameedRoute
   TaleemRoute: typeof TaleemRoute
+  ApiPublicNotifySubmissionRoute: typeof ApiPublicNotifySubmissionRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -116,6 +146,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TaleemRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/notify-submission': {
+      id: '/api/public/notify-submission'
+      path: '/api/public/notify-submission'
+      fullPath: '/api/public/notify-submission'
+      preLoaderRoute: typeof ApiPublicNotifySubmissionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -125,6 +162,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   TalameedRoute: TalameedRoute,
   TaleemRoute: TaleemRoute,
+  ApiPublicNotifySubmissionRoute: ApiPublicNotifySubmissionRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
+import { UserRound } from "lucide-react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { SpaceAuth, Wordmark } from "@/components/SpaceAuth";
 import { LevelsPanel } from "@/components/admin/LevelsPanel";
@@ -37,18 +38,25 @@ export const Route = createFileRoute("/admin")({
 function Page() {
   return (
     <SpaceAuth space="admin">
-      {({ session, client, signOut }) => (
-        <AdminDashboard email={session.user.email ?? ""} client={client} signOut={signOut} />
+      {({ session, profile, client, signOut }) => (
+        <AdminDashboard
+          name={profile.full_name?.trim() || session.user.email?.split("@")[0] || "المشرف"}
+          email={session.user.email ?? ""}
+          client={client}
+          signOut={signOut}
+        />
       )}
     </SpaceAuth>
   );
 }
 
 function AdminDashboard({
+  name,
   email,
   client,
   signOut,
 }: {
+  name: string;
   email: string;
   client: SupabaseClient<Database>;
   signOut: () => Promise<void>;
@@ -57,30 +65,36 @@ function AdminDashboard({
 
   return (
     <div className="min-h-screen bg-canvas">
-      <header className="border-b border-border bg-card">
-        <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-4 py-4">
+      <header className="app-bar">
+        <div className="mx-auto flex w-full max-w-5xl flex-wrap items-center justify-between gap-3 px-4 py-3">
           <Wordmark space="admin" />
+
+          <nav className="nav-menu order-3 w-full justify-center lg:order-none lg:w-auto" aria-label="القائمة">
+            {TABS.map((t) => (
+              <button
+                key={t.key}
+                type="button"
+                className="nav-menu-item"
+                data-active={tab === t.key}
+                onClick={() => setTab(t.key)}
+              >
+                {t.label}
+              </button>
+            ))}
+          </nav>
+
           <div className="flex items-center gap-3">
-            <span className="text-xs text-muted-foreground" dir="ltr">
-              {email}
-            </span>
+            <div className="user-chip" title={email}>
+              <span className="user-avatar" aria-hidden="true">
+                <UserRound size={18} />
+              </span>
+              <span className="text-sm font-semibold text-foreground">{name}</span>
+            </div>
             <button type="button" onClick={signOut} className="btn-text">
               تسجيل الخروج
             </button>
           </div>
         </div>
-        <nav className="mx-auto flex max-w-5xl flex-wrap gap-2 px-4 pb-3">
-          {TABS.map((t) => (
-            <button
-              key={t.key}
-              type="button"
-              className={tab === t.key ? "btn-primary" : "btn-text"}
-              onClick={() => setTab(t.key)}
-            >
-              {t.label}
-            </button>
-          ))}
-        </nav>
       </header>
 
       <main className="mx-auto max-w-5xl px-4 py-8">
