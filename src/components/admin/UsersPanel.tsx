@@ -6,6 +6,7 @@ import { SPACE_LABEL, STATUS_LABEL, type SpaceKey } from "@/lib/spaces";
 type ProfileRow = Database["public"]["Tables"]["profiles"]["Row"];
 type LevelRow = Database["public"]["Tables"]["levels"]["Row"];
 type ClassRow = Database["public"]["Tables"]["classes"]["Row"];
+type TeacherClassRow = Database["public"]["Tables"]["teacher_classes"]["Row"];
 
 const SPACES: SpaceKey[] = ["talameed", "taleem", "admin"];
 const STATUSES: Database["public"]["Enums"]["account_status"][] = ["pending", "approved", "rejected"];
@@ -14,7 +15,7 @@ export function UsersPanel({ client }: { client: SupabaseClient<Database> }) {
   const [rows, setRows] = useState<ProfileRow[]>([]);
   const [levels, setLevels] = useState<LevelRow[]>([]);
   const [classes, setClasses] = useState<ClassRow[]>([]);
-  const [teacherClasses, setTeacherClasses] = useState<Record<string, string[]>>({});
+  const [teacherClasses, setTeacherClasses] = useState<TeacherClassRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
@@ -29,7 +30,7 @@ export function UsersPanel({ client }: { client: SupabaseClient<Database> }) {
         client.from("profiles").select("*").order("created_at", { ascending: false }),
         client.from("levels").select("*").order("position", { ascending: true }),
         client.from("classes").select("*").order("name", { ascending: true }),
-        client.from("teacher_classes").select("teacher_id, class_id"),
+        client.from("teacher_classes").select("*"),
       ]);
     if (e1 || e2 || e3 || e4) setError("تعذّر تحميل المستخدمين. تأكد من صلاحيات المشرف العام.");
     else {
@@ -37,11 +38,7 @@ export function UsersPanel({ client }: { client: SupabaseClient<Database> }) {
       setRows(p ?? []);
       setLevels(lv ?? []);
       setClasses(cl ?? []);
-      const map: Record<string, string[]> = {};
-      for (const row of tc ?? []) {
-        (map[row.teacher_id] ??= []).push(row.class_id);
-      }
-      setTeacherClasses(map);
+      setTeacherClasses(tc ?? []);
     }
     setLoading(false);
   };
@@ -51,37 +48,34 @@ export function UsersPanel({ client }: { client: SupabaseClient<Database> }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [client]);
 
-  const save = async (patch: Partial<ProfileRow>, teacherClassIds: string[]) => {
+  const save = async (patch: Partial<ProfileRow>, teacherClassIds?: string[]) => {
     if (!editing) return;
     setBusy(true);
     const { error: err } = await client
       .from("profiles")
       .update({ ...patch, reviewed_at: new Date().toISOString() })
       .eq("id", editing.id);
-
-    let syncError = err;
-    if (!syncError) {
-      const current = teacherClasses[editing.id] ?? [];
-      const next = patch.space === "taleem" ? teacherClassIds : [];
-      const toAdd = next.filter((id) => !current.includes(id));
-      const toRemove = current.filter((id) => !next.includes(id));
+    let syncErr: unknown = null;
+    if (!err && teacherClassIds) {
+      const current = teacherClasses.filter((t) => t.teacher_id === editing.id).map((t) => t.class_id);
+      const toAdd = teacherClassIds.filter((id) => !current.includes(id));
+      const toRemove = current.filter((id) => !teacherClassIds.includes(id));
       if (toRemove.length > 0) {
-        const { error: delErr } = await client
+        const { error: e } = await client
           .from("teacher_classes")
           .delete()
           .eq("teacher_id", editing.id)
           .in("class_id", toRemove);
-        syncError = delErr;
+        syncErr = e ?? syncErr;
       }
-      if (!syncError && toAdd.length > 0) {
-        const { error: insErr } = await client
+      if (toAdd.length > 0) {
+        const { error: e } = await client
           .from("teacher_classes")
           .insert(toAdd.map((class_id) => ({ teacher_id: editing.id, class_id })));
-        syncError = insErr;
+        syncErr = e ?? syncErr;
       }
     }
-
-    if (syncError) setError("تعذّر حفظ المستخدم.");
+    if (err || syncErr) setError("تعذّر حفظ المستخدم.");
     else {
       setError(null);
       setEditing(null);
@@ -99,11 +93,8 @@ export function UsersPanel({ client }: { client: SupabaseClient<Database> }) {
 
   const levelName = (id: string | null) => levels.find((l) => l.id === id)?.name ?? "—";
   const className = (id: string | null) => classes.find((c) => c.id === id)?.name ?? "—";
-  const teacherClassNames = (id: string) =>
-    (teacherClasses[id] ?? [])
-      .map((cid) => classes.find((c) => c.id === cid)?.name)
-      .filter(Boolean)
-      .join("، ");
+  const teacherClassIdsOf = (teacherId: string) =>
+    teacherClasses.filter((t) => t.teacher_id === teacherId).map((t) => t.class_id);
 
   const visible = rows.filter((r) => {
     if (spaceFilter !== "all" && r.space !== spaceFilter) return false;
@@ -158,7 +149,7 @@ export function UsersPanel({ client }: { client: SupabaseClient<Database> }) {
                     row={r}
                     levels={levels}
                     classes={classes}
-                    teacherClassIds={teacherClasses[r.id] ?? []}
+                    teacherClassIds={teacherClassIdsOf(r.id)}
                     busy={busy}
                     onCancel={() => setEditing(null)}
                     onSave={save}
@@ -186,7 +177,12 @@ export function UsersPanel({ client }: { client: SupabaseClient<Database> }) {
                         {r.space === "taleem" ? (
                           <>
                             <span>•</span>
-                            <span>الأقسام: {teacherClassNames(r.id) || "—"}</span>
+                            <span>
+                              الأقسام:{" "}
+                              {teacherClassIdsOf(r.id).length === 0
+                                ? "—"
+                                : teacherClassIdsOf(r.id).map((id) => className(id)).join("، ")}
+                            </span>
                           </>
                         ) : null}
                       </div>
@@ -225,19 +221,22 @@ function UserEditor({
   teacherClassIds: string[];
   busy: boolean;
   onCancel: () => void;
-  onSave: (patch: Partial<ProfileRow>, teacherClassIds: string[]) => Promise<void>;
+  onSave: (patch: Partial<ProfileRow>, teacherClassIds?: string[]) => Promise<void>;
 }) {
   const [fullName, setFullName] = useState(row.full_name ?? "");
   const [space, setSpace] = useState(row.space);
   const [status, setStatus] = useState(row.status);
   const [levelId, setLevelId] = useState(row.level_id ?? "");
   const [classId, setClassId] = useState(row.class_id ?? "");
-  const [teachClasses, setTeachClasses] = useState<string[]>(teacherClassIds);
+  const [teacherClasses, setTeacherClasses] = useState<string[]>(teacherClassIds);
 
   const filteredClasses = levelId === "" ? classes : classes.filter((c) => c.level_id === levelId);
 
-  const toggleTeachClass = (id: string) =>
-    setTeachClasses((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  const levelNameOfClass = (c: ClassRow) =>
+    levels.find((l) => l.id === c.level_id)?.name ?? "بدون مستوى";
+
+  const toggleTeacherClass = (id: string) =>
+    setTeacherClasses((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
 
   return (
     <form
@@ -252,7 +251,7 @@ function UserEditor({
             level_id: levelId === "" ? null : levelId,
             class_id: classId === "" ? null : classId,
           },
-          teachClasses,
+          space === "taleem" ? teacherClasses : [],
         );
       }}
     >
@@ -311,34 +310,39 @@ function UserEditor({
         ))}
       </select>
       {space === "taleem" ? (
-        <div className="sm:col-span-3 rounded-xl border border-border p-3">
-          <div className="text-sm font-semibold text-foreground">الأقسام المُسندة إلى الأستاذ</div>
-          <p className="mt-1 text-xs text-muted-foreground">يمكن إسناد أكثر من قسم للأستاذ الواحد.</p>
-          {classes.length === 0 ? (
-            <p className="mt-3 text-xs text-muted-foreground">لا توجد أقسام بعد.</p>
-          ) : (
-            <div className="mt-3 grid gap-2 sm:grid-cols-3">
-              {classes.map((c) => (
-                <label key={c.id} className="flex items-center gap-2 text-sm text-foreground">
-                  <input
-                    type="checkbox"
-                    checked={teachClasses.includes(c.id)}
-                    onChange={() => toggleTeachClass(c.id)}
-                  />
-                  <span>
+        <fieldset className="sm:col-span-3">
+          <legend className="mb-2 text-xs font-semibold text-muted-foreground">
+            الأقسام المسندة إلى الأستاذ (يمكن اختيار أكثر من قسم)
+          </legend>
+          <div className="flex flex-wrap gap-2">
+            {classes.length === 0 ? (
+              <span className="text-xs text-muted-foreground">لا توجد أقسام بعد.</span>
+            ) : (
+              classes.map((c) => {
+                const checked = teacherClasses.includes(c.id);
+                return (
+                  <label
+                    key={c.id}
+                    className={`flex cursor-pointer items-center gap-2 rounded-full border px-3 py-1 text-xs transition-colors ${
+                      checked
+                        ? "border-primary bg-primary/10 text-foreground"
+                        : "border-border bg-card text-muted-foreground"
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      className="accent-primary"
+                      checked={checked}
+                      onChange={() => toggleTeacherClass(c.id)}
+                    />
                     {c.name}
-                    {c.level_id ? (
-                      <span className="text-xs text-muted-foreground">
-                        {" "}
-                        — {levels.find((l) => l.id === c.level_id)?.name ?? ""}
-                      </span>
-                    ) : null}
-                  </span>
-                </label>
-              ))}
-            </div>
-          )}
-        </div>
+                    <span className="text-muted-foreground">({levelNameOfClass(c)})</span>
+                  </label>
+                );
+              })
+            )}
+          </div>
+        </fieldset>
       ) : null}
       <div className="flex gap-2">
         <button type="submit" className="btn-primary" disabled={busy}>

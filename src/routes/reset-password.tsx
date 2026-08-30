@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { SpaceShell, translateError } from "@/components/SpaceAuth";
+import { PasswordField } from "@/components/PasswordField";
 import { getSpaceClient, SPACES, type SpaceKey } from "@/lib/spaces";
 
 export const Route = createFileRoute("/reset-password")({
@@ -105,41 +106,27 @@ function ResetPasswordPage() {
         </p>
       ) : (
         <form onSubmit={submit} className="mt-8 space-y-5">
-          <div className="field">
-            <input
-              id="new-password"
-              type="password"
-              required
-              dir="ltr"
-              minLength={6}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder=" "
-              className="field-input"
-              autoComplete="new-password"
-            />
-            <label htmlFor="new-password" className="field-label">
-              كلمة المرور الجديدة
-            </label>
-          </div>
+          <PasswordField
+            id="new-password"
+            name="new-password"
+            label="كلمة المرور الجديدة"
+            required
+            minLength={6}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            autoComplete="new-password"
+          />
 
-          <div className="field">
-            <input
-              id="confirm-password"
-              type="password"
-              required
-              dir="ltr"
-              minLength={6}
-              value={confirm}
-              onChange={(e) => setConfirm(e.target.value)}
-              placeholder=" "
-              className="field-input"
-              autoComplete="new-password"
-            />
-            <label htmlFor="confirm-password" className="field-label">
-              تأكيد كلمة المرور
-            </label>
-          </div>
+          <PasswordField
+            id="confirm-password"
+            name="confirm-password"
+            label="تأكيد كلمة المرور"
+            required
+            minLength={6}
+            value={confirm}
+            onChange={(e) => setConfirm(e.target.value)}
+            autoComplete="new-password"
+          />
 
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
