@@ -1,6 +1,7 @@
 # Madauros Code Hub
 
-import a project from GitHub https://github.com/madauros/madauros
+import a project from GitHub https://github.com/michael5787/
+friendly-ghost-importer
 
 
 **Live app**: https://friendly-ghost-importer.lovable.app
