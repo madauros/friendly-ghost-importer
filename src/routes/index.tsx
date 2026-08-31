@@ -105,7 +105,7 @@ function StudentLogin() {
         },
       });
       if (err) setError(translateError(err.message));
-      else setMessage("تم إنشاء الحساب. تحقّق من بريدك الإلكتروني لتأكيده، ثم انتظر مصادقة المشرف.");
+      else setMessage(" تم إنشاء الحساب. سيتم تأكيده قريباً بعد مصادقة المشرف.");
     } else {
       const { error: err } = await client.auth.signInWithPassword({ email, password });
       if (err) {
