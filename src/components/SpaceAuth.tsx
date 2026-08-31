@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import type { Session, SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
-import { getSpaceClient, SPACES, STATUS_LABEL, type SpaceKey } from "@/lib/spaces";
+import { consumeAuthRedirect, getSpaceClient, SPACES, STATUS_LABEL, type SpaceKey } from "@/lib/spaces";
 import { MainNav } from "@/components/MainNav";
 import { PasswordField } from "@/components/PasswordField";
 import { PublicBackdrop } from "@/components/PublicBackdrop";
@@ -37,10 +37,12 @@ export function SpaceAuth({ space, children }: Props) {
     const { data: sub } = client.auth.onAuthStateChange((_e, s) => {
       setSession(s);
     });
-    client.auth.getSession().then(({ data }) => {
-      setSession(data.session);
-      setReady(true);
-    });
+    consumeAuthRedirect(client).then(() =>
+      client.auth.getSession().then(({ data }) => {
+        setSession(data.session);
+        setReady(true);
+      }),
+    );
     return () => sub.subscription.unsubscribe();
   }, [client]);
 
@@ -85,7 +87,7 @@ export function SpaceAuth({ space, children }: Props) {
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/`,
+          emailRedirectTo: `${window.location.origin}${config.path}`,
           data: { space },
         },
       });
