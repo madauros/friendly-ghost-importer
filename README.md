@@ -4,7 +4,7 @@ import a project from GitHub https://github.com/michael5787/
 friendly-ghost-importer
 
 
-**Live app**: https://friendly-ghost-importer.lovable.app
+**Live app**: https://talameed.vercel.app/
 
 ## Development
 
