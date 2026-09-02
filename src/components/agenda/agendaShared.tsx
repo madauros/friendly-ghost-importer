@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Download, LinkIcon, Paperclip } from "lucide-react";
+import { BookOpen, ClipboardCheck, Download, LinkIcon, Paperclip } from "lucide-react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { openResource, type ResourceRow } from "@/components/resources/useResources";
