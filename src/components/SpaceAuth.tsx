@@ -101,7 +101,7 @@ export function SpaceAuth({ space, children }: Props) {
         },
       });
       if (err) setError(translateError(err.message));
-      else setMessage("تم إنشاء الحساب. تحقّق من بريدك الإلكتروني لتأكيده، ثم انتظر مصادقة المشرف.");
+      else setMessage("تم إنشاء الحساب. في انتظار مصادقة المشرف العام لتفعيله.");
     } else {
       const { error: err } = await client.auth.signInWithPassword({ email, password });
       if (err) setError(translateError(err.message));
