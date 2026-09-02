@@ -1,7 +1,11 @@
 import { useEffect, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
+
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { SPACE_LABEL, STATUS_LABEL, type SpaceKey } from "@/lib/spaces";
+import { setUserPassword } from "@/lib/admin-users.functions";
+import { PasswordField } from "@/components/PasswordField";
 
 type ProfileRow = Database["public"]["Tables"]["profiles"]["Row"];
 type LevelRow = Database["public"]["Tables"]["levels"]["Row"];
@@ -229,6 +233,25 @@ function UserEditor({
   const [levelId, setLevelId] = useState(row.level_id ?? "");
   const [classId, setClassId] = useState(row.class_id ?? "");
   const [teacherClasses, setTeacherClasses] = useState<string[]>(teacherClassIds);
+  const [newPassword, setNewPassword] = useState("");
+  const [pwBusy, setPwBusy] = useState(false);
+  const [pwMsg, setPwMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const updatePasswordFn = useServerFn(setUserPassword);
+
+  const updatePassword = async () => {
+    if (newPassword.length < 6) return;
+    setPwBusy(true);
+    setPwMsg(null);
+    try {
+      await updatePasswordFn({ data: { userId: row.id, password: newPassword } });
+      setNewPassword("");
+      setPwMsg({ ok: true, text: "تم تحديث كلمة المرور." });
+    } catch {
+      setPwMsg({ ok: false, text: "تعذّر تحديث كلمة المرور. تأكد من صلاحيات المشرف العام." });
+    }
+    setPwBusy(false);
+  };
+
 
   const filteredClasses = levelId === "" ? classes : classes.filter((c) => c.level_id === levelId);
 
@@ -344,6 +367,41 @@ function UserEditor({
           </div>
         </fieldset>
       ) : null}
+      <fieldset className="sm:col-span-3 rounded-2xl border border-border p-4">
+        <legend className="px-1 text-xs font-semibold text-muted-foreground">
+          تعيين كلمة مرور جديدة لهذا المستخدم
+        </legend>
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="min-w-[16rem] flex-1">
+            <PasswordField
+              label="كلمة المرور الجديدة"
+              id={`new-password-${row.id}`}
+              autoComplete="new-password"
+              value={newPassword}
+              onChange={(e) => {
+                setNewPassword(e.target.value);
+                setPwMsg(null);
+              }}
+            />
+          </div>
+          <button
+            type="button"
+            className="btn-text"
+            disabled={pwBusy || newPassword.length < 6}
+            onClick={() => void updatePassword()}
+          >
+            {pwBusy ? "جارٍ التحديث…" : "تحديث كلمة المرور"}
+          </button>
+        </div>
+        {pwMsg ? (
+          <p className={`mt-2 text-xs ${pwMsg.ok ? "text-muted-foreground" : "text-destructive"}`}>
+            {pwMsg.text}
+          </p>
+        ) : (
+          <p className="mt-2 text-xs text-muted-foreground">6 أحرف على الأقل.</p>
+        )}
+      </fieldset>
+
       <div className="flex gap-2">
         <button type="submit" className="btn-primary" disabled={busy}>
           حفظ

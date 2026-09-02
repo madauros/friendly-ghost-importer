@@ -1,0 +1,1 @@
+REVOKE ALL ON FUNCTION public.teaches_student(uuid, uuid) FROM anon;

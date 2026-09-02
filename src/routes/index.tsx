@@ -149,19 +149,8 @@ function StudentLogin() {
           />
         )}
 
-        {mode === "login" ? (
-          <button
-            type="button"
-            className="btn-text"
-            onClick={() => {
-              setMode("forgot");
-              setError(null);
-              setMessage(null);
-            }}
-          >
-            نسيت كلمة المرور؟
-          </button>
-        ) : null}
+        {/* Password reset link hidden (email sending limits) */}
+
 
         {error ? <p className="text-sm text-destructive">{error}</p> : null}
         {message ? <p className="text-sm text-success">{message}</p> : null}
