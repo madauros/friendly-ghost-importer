@@ -83,7 +83,7 @@ function StudentShell({
         <div className="mx-auto flex w-full max-w-4xl flex-wrap items-center justify-between gap-3 px-4 py-3">
           <Wordmark space="talameed" />
 
-          <nav className="nav-menu order-3 w-full justify-center sm:order-none sm:w-auto" aria-label="القائمة">
+          <nav className="nav-menu order-3 w-full min-w-0 max-w-full justify-start sm:order-none sm:w-auto sm:justify-center" aria-label="القائمة">
             {tabs.map((t) => (
               <button
                 key={t.key}
@@ -98,11 +98,11 @@ function StudentShell({
             ))}
           </nav>
 
-          <div className="user-chip">
+          <div className="user-chip min-w-0 max-w-[45vw]">
             <span className="user-avatar" aria-hidden="true">
               <UserRound size={18} />
             </span>
-            <span className="text-sm font-semibold text-foreground">{name}</span>
+            <span className="truncate text-sm font-semibold text-foreground">{name}</span>
           </div>
         </div>
       </header>
