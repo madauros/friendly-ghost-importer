@@ -42,7 +42,10 @@ export function StudentAgenda({
         ) : loading ? (
           <p className="text-sm text-muted-foreground">جارٍ التحميل…</p>
         ) : rows.length === 0 ? (
-          <p className="text-sm text-muted-foreground">لا توجد واجبات أو تقييمات في هذا اليوم.</p>
+          <p className="rounded-2xl border border-dashed border-border bg-card/60 p-6 text-center text-sm text-muted-foreground">
+            لا توجد واجبات أو تقييمات في هذا اليوم.
+          </p>
+
         ) : (
           rows.map((row) => (
             <AgendaCard
