@@ -221,4 +221,3 @@ function AccountsPanel({ client }: { client: SupabaseClient<Database> }) {
     </section>
   );
 }
-
