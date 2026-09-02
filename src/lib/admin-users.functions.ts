@@ -4,7 +4,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 export const deleteUserAccount = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .validator(z.object({ userId: z.string().uuid() }))
+  .inputValidator((input) => z.object({ userId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { data: isSuperAdmin } = await context.supabase.rpc("has_role", {
       _user_id: context.userId,
@@ -19,11 +19,10 @@ export const deleteUserAccount = createServerFn({ method: "POST" })
 
 export const setUserPassword = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .validator(
-    z.object({
-      userId: z.string().uuid(),
-      password: z.string().min(6).max(72),
-    }),
+  .inputValidator((input) =>
+    z
+      .object({ userId: z.string().uuid(), password: z.string().min(6).max(72) })
+      .parse(input),
   )
   .handler(async ({ data, context }) => {
     const { data: isSuperAdmin } = await context.supabase.rpc("has_role", {
