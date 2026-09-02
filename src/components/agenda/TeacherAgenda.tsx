@@ -152,7 +152,10 @@ export function TeacherAgenda({
         </select>
       </div>
 
-      <form onSubmit={submit} className="mt-4 grid gap-3 rounded-2xl border border-border bg-card p-4 sm:grid-cols-2">
+      <form onSubmit={submit} className="mt-4 grid gap-3 rounded-2xl border border-border bg-card/95 p-4 shadow-sm sm:grid-cols-2">
+        <p className="sm:col-span-2 text-sm font-semibold text-foreground">
+          {editing ? "تعديل عنصر" : "إضافة عنصر جديد"}
+        </p>
         <select className="field-input" value={kind} onChange={(e) => setKind(e.target.value as AgendaKind)}>
           <option value="homework">{AGENDA_KIND_LABEL.homework}</option>
           <option value="evaluation">{AGENDA_KIND_LABEL.evaluation}</option>
