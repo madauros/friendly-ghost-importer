@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import type { Session, SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
-import { consumeAuthRedirect, getSpaceClient, SPACES, SPACE_LABEL, STATUS_LABEL, type SpaceKey } from "@/lib/spaces";
+import { consumeAuthRedirect, getSpaceClient, SPACES, STATUS_LABEL, type SpaceKey } from "@/lib/spaces";
 import { MainNav } from "@/components/MainNav";
 import { PasswordField } from "@/components/PasswordField";
 import { PublicBackdrop } from "@/components/PublicBackdrop";
@@ -24,10 +24,7 @@ export function SpaceAuth({ space, children }: Props) {
 
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<ProfileRow | null>(null);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [profileLoaded, setProfileLoaded] = useState(false);
   const [ready, setReady] = useState(false);
-
 
   const [mode, setMode] = useState<"login" | "signup" | "forgot">("login");
   const [email, setEmail] = useState("");
@@ -53,26 +50,20 @@ export function SpaceAuth({ space, children }: Props) {
     let active = true;
     if (!session) {
       setProfile(null);
-      setIsAdmin(false);
-      setProfileLoaded(false);
       return;
     }
-    setProfileLoaded(false);
-    void (async () => {
-      const [{ data: prof }, { data: roles }] = await Promise.all([
-        client.from("profiles").select("*").eq("id", session.user.id).maybeSingle(),
-        client.from("user_roles").select("role").eq("user_id", session.user.id),
-      ]);
-      if (!active) return;
-      setProfile(prof ?? null);
-      setIsAdmin((roles ?? []).some((r) => r.role === "super_admin"));
-      setProfileLoaded(true);
-    })();
+    client
+      .from("profiles")
+      .select("*")
+      .eq("id", session.user.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (active) setProfile(data ?? null);
+      });
     return () => {
       active = false;
     };
   }, [client, session]);
-
 
   const signOut = async () => {
     await client.auth.signOut();
@@ -96,12 +87,15 @@ export function SpaceAuth({ space, children }: Props) {
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}${config.path}`,
+          emailRedirectTo: `${window.location.origin}/`,
           data: { space },
         },
       });
       if (err) setError(translateError(err.message));
-      else setMessage("تم إنشاء الحساب. تحقّق من بريدك الإلكتروني لتأكيده، ثم انتظر مصادقة المشرف.");
+      else
+        setMessage(
+            "تم إنشاء الحساب. سيتم تأكيده قريباً بعد مصادقة المشرف."
+        );
     } else {
       const { error: err } = await client.auth.signInWithPassword({ email, password });
       if (err) setError(translateError(err.message));
@@ -109,7 +103,7 @@ export function SpaceAuth({ space, children }: Props) {
     setBusy(false);
   };
 
-  if (!ready || (session && !profileLoaded)) {
+  if (!ready) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-canvas">
         <span className="text-sm text-muted-foreground">جارٍ التحميل…</span>
@@ -117,37 +111,13 @@ export function SpaceAuth({ space, children }: Props) {
     );
   }
 
-  const spaceAllowed = !!profile && (isAdmin || profile.space === space);
-
-  if (session && profile && profile.status === "approved" && spaceAllowed) {
+  if (session && profile && profile.status === "approved") {
     return <>{children({ session, profile, client, signOut })}</>;
-  }
-
-  if (session && profile && profile.status === "approved" && !spaceAllowed) {
-    return (
-      <SpaceShell space={space} onSignOut={signOut}>
-        <div className="text-center">
-          <h1 className="text-2xl font-normal text-foreground">{session.user.email}</h1>
-          <p className="mt-4 text-sm text-muted-foreground">
-            هذا الحساب مخصص لفضاء {SPACE_LABEL[profile.space]} ولا يمكنه الدخول إلى {config.title}.
-          </p>
-          <a href={SPACES[profile.space].path} className="btn-primary mt-6 inline-block">
-            الانتقال إلى فضائي
-          </a>
-          <div className="mt-8 flex justify-end">
-            <button type="button" onClick={signOut} className="btn-text">
-              تسجيل الخروج
-            </button>
-          </div>
-        </div>
-      </SpaceShell>
-    );
   }
 
   if (session) {
     const status = profile?.status ?? "pending";
     return (
-
       <SpaceShell space={space} onSignOut={signOut}>
         <div className="text-center">
           <h1 className="text-2xl font-normal text-foreground">{session.user.email}</h1>
@@ -210,8 +180,6 @@ export function SpaceAuth({ space, children }: Props) {
             autoComplete={mode === "login" ? "current-password" : "new-password"}
           />
         )}
-
-        {/* Password reset link hidden (email sending limits) */}
 
 
         {error ? <p className="text-sm text-destructive">{error}</p> : null}

@@ -9,6 +9,7 @@ import {
   openResource,
   useLevels,
   useResourceList,
+  useTeacherClasses,
   type Category,
   type ResourceRow,
 } from "./useResources";
@@ -21,11 +22,13 @@ export function TeacherResources({
   teacherId: string;
 }) {
   const levels = useLevels(client);
+  const classes = useTeacherClasses(client, teacherId);
   const { rows, loading, error, setError, reload } = useResourceList(client, null, [teacherId]);
 
   const [category, setCategory] = useState<Category>("cours");
   const [title, setTitle] = useState("");
   const [levelId, setLevelId] = useState("");
+  const [classId, setClassId] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
   const [editing, setEditing] = useState<ResourceRow | null>(null);
@@ -34,6 +37,7 @@ export function TeacherResources({
     setEditing(null);
     setTitle("");
     setLevelId("");
+    setClassId("");
     setFile(null);
   };
 
@@ -45,7 +49,12 @@ export function TeacherResources({
     if (editing) {
       const { error: err } = await client
         .from("resources")
-        .update({ title: title.trim(), level_id: levelId === "" ? null : levelId, category })
+        .update({
+          title: title.trim(),
+          level_id: levelId === "" ? null : levelId,
+          class_id: classId === "" ? null : classId,
+          category,
+        })
         .eq("id", editing.id);
       if (err) setError("تعذّر حفظ التعديل.");
       else {
@@ -81,6 +90,7 @@ export function TeacherResources({
     const { error: insErr } = await client.from("resources").insert({
       teacher_id: teacherId,
       level_id: levelId === "" ? null : levelId,
+      class_id: classId === "" ? null : classId,
       category,
       title: title.trim() === "" ? file.name : title.trim(),
       file_path: path,
@@ -117,6 +127,9 @@ export function TeacherResources({
     }
   };
 
+  const className = (id: string | null) =>
+    id === null ? "كل الأقسام" : (classes.find((c) => c.id === id)?.name ?? "قسم محدد");
+
   const levelName = (id: string | null) => levels.find((l) => l.id === id)?.name ?? "كل المستويات";
 
   return (
@@ -126,7 +139,7 @@ export function TeacherResources({
         ارفع ملفات PDF أو صوراً حسب المستوى، وسيطّلع عليها التلاميذ المعنيون.
       </p>
 
-      <form onSubmit={submit} className="mt-6 grid gap-3 rounded-2xl border border-border bg-card p-4 sm:grid-cols-5">
+      <form onSubmit={submit} className="mt-6 grid gap-3 rounded-2xl border border-border bg-card p-4 sm:grid-cols-6">
         <select
           className="field-input"
           value={category}
@@ -142,6 +155,16 @@ export function TeacherResources({
               {l.name}
             </option>
           ))}
+        </select>
+        <select className="field-input" value={classId} onChange={(e) => setClassId(e.target.value)}>
+          <option value="">كل أقسام المستوى</option>
+          {classes
+            .filter((c) => levelId === "" || c.level_id === levelId)
+            .map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
         </select>
         <input
           className="field-input sm:col-span-2"
@@ -183,7 +206,7 @@ export function TeacherResources({
                 <div>
                   <div className="text-sm font-semibold text-foreground">{r.title}</div>
                   <div className="mt-1 text-xs text-muted-foreground">
-                    {CATEGORY_LABEL[r.category]} • {levelName(r.level_id)}
+                    {CATEGORY_LABEL[r.category]} • {levelName(r.level_id)} • {className(r.class_id)}
                     {r.file_size ? ` • ${formatSize(r.file_size)}` : ""}
                     {r.teacher_id === teacherId ? "" : " • ملف أستاذ آخر"}
                   </div>
@@ -204,6 +227,7 @@ export function TeacherResources({
                           setEditing(r);
                           setTitle(r.title);
                           setLevelId(r.level_id ?? "");
+                          setClassId(r.class_id ?? "");
                           setCategory(r.category);
                           setFile(null);
                         }}
