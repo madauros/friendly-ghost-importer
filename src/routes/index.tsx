@@ -1,10 +1,22 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+//import { createFileRoute } from "@tanstack/react-router";
+import { useMemo, useState } from "react";
+import { GraduationCap, School, TriangleAlert } from "lucide-react";
+import { StudentAgenda } from "@/components/agenda/StudentAgenda";
+import { TeacherAgenda } from "@/components/agenda/TeacherAgenda";
+import { formatDayLabelAr } from "@/components/agenda/AgendaCalendar";
+import { formatDayLabelAr } from "@/components/agenda/AgendaCalendar";
+import { shiftDay } from "@/components/agenda/useAgenda";
+import { IDS, MockDb, TODAY, createMockClient } from "@/lib/mockAgendaClient";
+import type { Database } from "@/integrations/supabase/types";
 import { consumeAuthRedirect, getSpaceClient, SPACES } from "@/lib/spaces";
 import { translateError, Wordmark } from "@/components/SpaceAuth";
 import { MainNav } from "@/components/MainNav";
 import { PasswordField } from "@/components/PasswordField";
 import { PublicBackdrop } from "@/components/PublicBackdrop";
+
+type ClassRow = Database["public"]["Tables"]["classes"]["Row"];
 
 export const Route = createFileRoute("/")({
   head: () => ({
