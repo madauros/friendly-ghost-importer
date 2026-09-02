@@ -166,6 +166,39 @@ export function TeacherSubmissions({
                 </div>
               </div>
 
+              <div className="mt-3 flex flex-wrap items-center gap-2 rounded-xl bg-primary/5 p-3">
+                <span className="text-xs font-semibold text-primary">النقطة</span>
+                {row.grade !== null ? (
+                  <span className="rounded-full bg-primary/15 px-3 py-1 text-sm font-bold text-primary" dir="ltr">
+                    {row.grade}/20
+                  </span>
+                ) : (
+                  <span className="text-xs text-muted-foreground">غير مصحّح</span>
+                )}
+                <input
+                  className="field-input w-24 text-sm"
+                  type="number"
+                  min={0}
+                  max={20}
+                  step="0.25"
+                  dir="ltr"
+                  placeholder="0-20"
+                  value={grades[row.id] ?? ""}
+                  onChange={(e) => setGrades((g) => ({ ...g, [row.id]: e.target.value }))}
+                />
+                <button
+                  type="button"
+                  className="btn-primary"
+                  disabled={gradeBusy === row.id}
+                  onClick={() => saveGrade(row)}
+                >
+                  {gradeBusy === row.id ? "…" : row.grade !== null ? "تعديل النقطة" : "حفظ النقطة"}
+                </button>
+                {row.graded_at ? (
+                  <span className="text-[11px] text-muted-foreground">صُحّح في {formatDate(row.graded_at)}</span>
+                ) : null}
+              </div>
+
               {row.comments.length > 0 ? (
                 <div className="mt-3 space-y-2 rounded-xl bg-primary/5 p-3">
                   {row.comments.map((c) => (
