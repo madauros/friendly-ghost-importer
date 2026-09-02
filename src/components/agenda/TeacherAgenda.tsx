@@ -88,11 +88,34 @@ export function TeacherAgenda({
 
     if (err) setError("تعذّر حفظ العنصر.");
     else {
+      if (!editing) await notifyClass(targetClass, payload.title, payload.kind);
       reset();
       await refresh();
     }
     setBusy(false);
   };
+
+  /** Prévient chaque élève de la classe qu'un nouvel élément d'agenda est programmé. */
+  const notifyClass = async (targetClass: string, eventTitle: string, eventKind: AgendaKind) => {
+    const { data: students } = await client
+      .from("profiles")
+      .select("id")
+      .eq("class_id", targetClass)
+      .eq("space", "talameed")
+      .eq("status", "approved");
+    if (!students || students.length === 0) return;
+    const className = classes.find((c) => c.id === targetClass)?.name ?? "";
+    await client.from("notifications").insert(
+      students.map((s) => ({
+        user_id: s.id,
+        actor_id: teacherId,
+        kind: "agenda",
+        title: `${AGENDA_KIND_LABEL[eventKind]} جديد في المفكرة`,
+        body: `«${eventTitle}» ${className ? `— ${className} ` : ""}ليوم ${formatDayLabelAr(dateKey)}`,
+      })),
+    );
+  };
+
 
   const remove = async (row: AgendaRow) => {
     if (!window.confirm(`حذف «${row.title}»؟`)) return;
