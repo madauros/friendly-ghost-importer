@@ -1,3 +1,4 @@
+import { CalendarPlus } from "lucide-react";
 import { useState } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
@@ -88,11 +89,34 @@ export function TeacherAgenda({
 
     if (err) setError("تعذّر حفظ العنصر.");
     else {
+      if (!editing) await notifyClass(targetClass, payload.title, payload.kind);
       reset();
       await refresh();
     }
     setBusy(false);
   };
+
+  /** Prévient chaque élève de la classe qu'un nouvel élément d'agenda est programmé. */
+  const notifyClass = async (targetClass: string, eventTitle: string, eventKind: AgendaKind) => {
+    const { data: students } = await client
+      .from("profiles")
+      .select("id")
+      .eq("class_id", targetClass)
+      .eq("space", "talameed")
+      .eq("status", "approved");
+    if (!students || students.length === 0) return;
+    const className = classes.find((c) => c.id === targetClass)?.name ?? "";
+    await client.from("notifications").insert(
+      students.map((s) => ({
+        user_id: s.id,
+        actor_id: teacherId,
+        kind: "agenda",
+        title: `${AGENDA_KIND_LABEL[eventKind]} جديد في المفكرة`,
+        body: `«${eventTitle}» ${className ? `— ${className} ` : ""}ليوم ${formatDayLabelAr(dateKey)}`,
+      })),
+    );
+  };
+
 
   const remove = async (row: AgendaRow) => {
     if (!window.confirm(`حذف «${row.title}»؟`)) return;
@@ -102,11 +126,16 @@ export function TeacherAgenda({
   };
 
   return (
-    <section>
-      <h2 className="text-lg font-semibold text-foreground">المفكرة</h2>
-      <p className="mt-1 text-sm text-muted-foreground">
-        برمج الواجبات والتقييمات ليوم {formatDayLabelAr(dateKey)} مع نص أو ملف مرفق.
-      </p>
+    <section className="text-start">
+      <div className="rounded-2xl border border-border bg-gradient-to-l from-brand-green/10 via-card to-brand-red/10 p-4">
+        <h2 className="flex items-center gap-2 text-lg font-semibold text-foreground">
+          <CalendarPlus size={18} className="text-brand-green" /> المفكرة
+        </h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          برمج الواجبات والتقييمات ليوم {formatDayLabelAr(dateKey)} مع نص أو ملف مرفق.
+        </p>
+      </div>
+
 
       <div className="mt-4">
         <AgendaCalendar value={dateKey} onChange={setDateKey} counts={counts} />
@@ -123,7 +152,10 @@ export function TeacherAgenda({
         </select>
       </div>
 
-      <form onSubmit={submit} className="mt-4 grid gap-3 rounded-2xl border border-border bg-card p-4 sm:grid-cols-2">
+      <form onSubmit={submit} className="mt-4 grid gap-3 rounded-2xl border border-border bg-card/95 p-4 shadow-sm sm:grid-cols-2">
+        <p className="sm:col-span-2 text-sm font-semibold text-foreground">
+          {editing ? "تعديل عنصر" : "إضافة عنصر جديد"}
+        </p>
         <select className="field-input" value={kind} onChange={(e) => setKind(e.target.value as AgendaKind)}>
           <option value="homework">{AGENDA_KIND_LABEL.homework}</option>
           <option value="evaluation">{AGENDA_KIND_LABEL.evaluation}</option>
