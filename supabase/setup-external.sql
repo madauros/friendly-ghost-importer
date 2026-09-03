@@ -165,11 +165,16 @@ CREATE TABLE IF NOT EXISTS public.resources (
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
 );
+-- Colonne classe (ajoutée après coup pour les bases déjà créées)
+ALTER TABLE public.resources
+  ADD COLUMN IF NOT EXISTS class_id uuid REFERENCES public.classes(id) ON DELETE SET NULL;
+
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.resources TO authenticated;
 GRANT ALL ON public.resources TO service_role;
 ALTER TABLE public.resources ENABLE ROW LEVEL SECURITY;
 
 CREATE INDEX IF NOT EXISTS resources_level_category_idx ON public.resources (level_id, category);
+CREATE INDEX IF NOT EXISTS resources_class_idx ON public.resources (class_id);
 DROP TRIGGER IF EXISTS update_resources_updated_at ON public.resources;
 CREATE TRIGGER update_resources_updated_at BEFORE UPDATE ON public.resources FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
