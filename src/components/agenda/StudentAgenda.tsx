@@ -1,19 +1,41 @@
 import { CalendarHeart } from "lucide-react";
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { AgendaCalendar, formatDayLabelAr } from "./AgendaCalendar";
 import { AgendaCard, useAgendaCounts, useAttachedResources } from "./agendaShared";
-import { toDateKey, useAgenda } from "./useAgenda";
+import { toDateKey, useAgenda, useFirstPendingDay } from "./useAgenda";
 
 export function StudentAgenda({
   client,
   classId,
+  studentId,
 }: {
   client: SupabaseClient<Database>;
   classId: string | null;
+  studentId: string;
 }) {
+  // Always start on today; jump once to the first pending homework (see below).
   const [dateKey, setDateKey] = useState(() => toDateKey(new Date()));
+  const autoJumpDone = useRef(false);
+  const { day: pendingDay, ready: pendingReady } = useFirstPendingDay(client, {
+    role: "student",
+    classId,
+    studentId,
+  });
+
+  useEffect(() => {
+    if (autoJumpDone.current || !pendingReady) return;
+    autoJumpDone.current = true;
+    if (pendingDay) setDateKey(pendingDay);
+  }, [pendingDay, pendingReady]);
+
+  // Any manual navigation disables the automatic jump for good.
+  const navigate = useCallback((key: string) => {
+    autoJumpDone.current = true;
+    setDateKey(key);
+  }, []);
+
   const { rows, loading, error, setError } = useAgenda(client, { classId }, dateKey);
   const counts = useAgendaCounts(client, { classId }, dateKey, 0);
   const resources = useAttachedResources(client, rows);
@@ -29,9 +51,8 @@ export function StudentAgenda({
         </p>
       </div>
 
-
       <div className="mt-4">
-        <AgendaCalendar value={dateKey} onChange={setDateKey} counts={counts} />
+        <AgendaCalendar value={dateKey} onChange={navigate} counts={counts} />
       </div>
 
       {error ? <p className="mt-4 text-sm text-destructive">{error}</p> : null}
@@ -45,7 +66,6 @@ export function StudentAgenda({
           <p className="rounded-2xl border border-dashed border-border bg-card/60 p-6 text-center text-sm text-muted-foreground">
             لا توجد واجبات أو تقييمات في هذا اليوم.
           </p>
-
         ) : (
           rows.map((row) => (
             <AgendaCard

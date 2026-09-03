@@ -1,11 +1,18 @@
 import { CalendarPlus } from "lucide-react";
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { CATEGORY_LABEL, useResourceList } from "@/components/resources/useResources";
 import { AgendaCalendar, formatDayLabelAr } from "./AgendaCalendar";
 import { AgendaCard, useAgendaCounts, useAttachedResources } from "./agendaShared";
-import { AGENDA_KIND_LABEL, toDateKey, useAgenda, type AgendaKind, type AgendaRow } from "./useAgenda";
+import {
+  AGENDA_KIND_LABEL,
+  toDateKey,
+  useAgenda,
+  useFirstPendingDay,
+  type AgendaKind,
+  type AgendaRow,
+} from "./useAgenda";
 
 type ClassRow = Database["public"]["Tables"]["classes"]["Row"];
 
@@ -18,8 +25,27 @@ export function TeacherAgenda({
   teacherId: string;
   classes: ClassRow[];
 }) {
+  // Always start on today; jump once to the first future homework (see below).
   const [dateKey, setDateKey] = useState(() => toDateKey(new Date()));
   const [classId, setClassId] = useState<string>("");
+  const autoJumpDone = useRef(false);
+  const { day: pendingDay, ready: pendingReady } = useFirstPendingDay(client, {
+    role: "teacher",
+    teacherId,
+    ...(classId === "" ? {} : { classId }),
+  });
+
+  useEffect(() => {
+    if (autoJumpDone.current || !pendingReady) return;
+    autoJumpDone.current = true;
+    if (pendingDay) setDateKey(pendingDay);
+  }, [pendingDay, pendingReady]);
+
+  // Any manual navigation disables the automatic jump for good.
+  const navigate = useCallback((key: string) => {
+    autoJumpDone.current = true;
+    setDateKey(key);
+  }, []);
   const filter = { teacherId, ...(classId === "" ? {} : { classId }) };
   const { rows, loading, error, setError, reload } = useAgenda(client, filter, dateKey);
   const [version, setVersion] = useState(0);
@@ -138,7 +164,7 @@ export function TeacherAgenda({
 
 
       <div className="mt-4">
-        <AgendaCalendar value={dateKey} onChange={setDateKey} counts={counts} />
+        <AgendaCalendar value={dateKey} onChange={navigate} counts={counts} />
       </div>
 
       <div className="mt-4">
