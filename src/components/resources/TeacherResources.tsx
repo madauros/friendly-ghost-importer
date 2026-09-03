@@ -76,13 +76,14 @@ export function TeacherResources({
       return;
     }
 
-    const ext = file.name.includes(".") ? file.name.split(".").pop() : "bin";
-    const path = `${teacherId}/${category}/${crypto.randomUUID()}.${ext}`;
+    const ext = (file.name.includes(".") ? file.name.split(".").pop() : "bin") || "bin";
+    const path = `${teacherId}/${category}/${crypto.randomUUID()}.${ext.toLowerCase()}`;
     const { error: upErr } = await client.storage
       .from("resources")
-      .upload(path, file, { contentType: file.type, upsert: false });
+      .upload(path, file, { contentType: file.type || "application/octet-stream", upsert: false });
     if (upErr) {
-      setError("تعذّر رفع الملف.");
+      console.error("[resources] upload failed", upErr);
+      setError(`تعذّر رفع الملف: ${upErr.message}`);
       setBusy(false);
       return;
     }
@@ -99,8 +100,9 @@ export function TeacherResources({
       file_size: file.size,
     });
     if (insErr) {
+      console.error("[resources] insert failed", insErr);
       await client.storage.from("resources").remove([path]);
-      setError("تعذّر حفظ الملف.");
+      setError(`تعذّر حفظ الملف: ${insErr.message}`);
     } else {
       reset();
       await reload();
