@@ -118,7 +118,7 @@ function StudentShell({
             onSubmitted={() => void notifications.reload()}
           />
         ) : tab === "agenda" ? (
-          <StudentAgenda client={client} classId={classId} />
+          <StudentAgenda client={client} classId={classId} studentId={userId} />
         ) : tab === "answers" ? (
           <StudentSubmissions client={client} studentId={userId} />
         ) : tab === "notifications" ? (
