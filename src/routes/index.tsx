@@ -6,8 +6,6 @@ import { MainNav } from "@/components/MainNav";
 import { PasswordField } from "@/components/PasswordField";
 import { PublicBackdrop } from "@/components/PublicBackdrop";
 
-
-
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
