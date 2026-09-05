@@ -255,8 +255,13 @@ function UserEditor({
     const msg = err instanceof Error ? err.message : "";
     if (/Forbidden/i.test(msg)) return `${action}: هذا الحساب لا يملك صلاحيات المشرف العام.`;
     if (/Unauthorized/i.test(msg)) return `${action}: انتهت جلستك، أعد تسجيل الدخول.`;
+    if (/weak|easy to guess/i.test(msg))
+      return `${action}: كلمة المرور ضعيفة جداً، اختر كلمة مرور أقوى.`;
+    if (/should be at least|Password should be/i.test(msg))
+      return `${action}: كلمة المرور قصيرة جداً (6 أحرف على الأقل).`;
     return `${action}${msg ? ` (${msg})` : ""}.`;
   };
+
 
   const updatePassword = async () => {
     if (newPassword.length < 6) return;
